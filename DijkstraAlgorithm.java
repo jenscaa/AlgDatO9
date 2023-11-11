@@ -156,12 +156,12 @@ public class DijkstraAlgorithm {
         }
         distance.put(startNode, 0);
 
-        // Initialize the priority queue with the start node.
-        // It is used to select the node with the minimum distance for each iteration.
-        // It is initialized with a Comparator that prioritizes
-        // nodes based on their distance to the starting node.
-        // The start node is added to the priority queue initially,
+        // Initialize the priority queue with the start node
         // since we want to start our search from this node.
+        // It is set up to prioritize nodes based on their distances from the start node.
+        // This is achieved with the Comparator.comparingInt(distance::get).
+        // The comparator compares nodes based on their distances in the distance map
+        // which gets updated in while-loop below.
         PriorityQueue<Integer> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(distance::get));
         priorityQueue.add(startNode);
 
@@ -184,6 +184,10 @@ public class DijkstraAlgorithm {
                 int newDist = distance.get(currentNode) + edge.length;
 
                 // Update the distance if a shorter path is found
+                // Here we also bypass the problem with PriorityQueue
+                // not allowing us to directly change priorities, by
+                // re-adding the node with the new priority after having it removed
+                // and then updating the value in distance to reflect this change in priority.
                 if (newDist < distance.get(edge.toNode)) {
                     distance.put(edge.toNode, newDist);
                     priorityQueue.add(edge.toNode);
