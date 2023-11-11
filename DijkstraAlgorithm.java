@@ -149,7 +149,7 @@ public class DijkstraAlgorithm {
         // from the start node to each other node.
         // Initially, all distances are set to
         // Integer.MAX_VALUE to represent "infinity",
-        // except for the startNode which is set to 0.
+        // except for the startNode which is set to 0 (logically)
         Map<Integer, Integer> distance = new HashMap<>();
         for (int node : nodes.keySet()) {
             distance.put(node, Integer.MAX_VALUE);
@@ -160,7 +160,8 @@ public class DijkstraAlgorithm {
         // It is used to select the node with the minimum distance for each iteration.
         // It is initialized with a Comparator that prioritizes
         // nodes based on their distance to the starting node.
-        // The start node is added to the priority queue initially.
+        // The start node is added to the priority queue initially,
+        // since we want to start our search from this node.
         PriorityQueue<Integer> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(distance::get));
         priorityQueue.add(startNode);
 
@@ -168,10 +169,16 @@ public class DijkstraAlgorithm {
         // For each iteration it selects the node with the lowest
         // distance from the starting node and checks its edges.
         // For each edge, if the new distance is shorter than any
-        // of the other edges, then the Node that the edge leads to is added to distances.
+        // of the other edges, then the Node that the edge leads to is added to PriorityQueue in addition.
         // This will repeat until the PriorityQueue is empty (meaning we got no more Nodes to explore)
         while (!priorityQueue.isEmpty()) {
             int currentNode = priorityQueue.poll();
+
+            // Check if the current node is the end node
+            if (currentNode == endNode) {
+                // Reached the end node
+                break;
+            }
 
             for (Edge edge : allEdges.get(currentNode)) {
                 int newDist = distance.get(currentNode) + edge.length;
