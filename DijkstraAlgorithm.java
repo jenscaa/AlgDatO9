@@ -1,4 +1,4 @@
-package AlgDatO9;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -205,8 +205,8 @@ public class DijkstraAlgorithm {
     public static void main(String[] args) {
         try {
             DijkstraAlgorithm dijkstraAlgorithm = new DijkstraAlgorithm();
-            dijkstraAlgorithm.readNodeFile("src/AlgDatO9/island.noder.txt");
-            dijkstraAlgorithm.readEdgeFile("src/AlgDatO9/island.kanter.txt");
+            dijkstraAlgorithm.readNodeFile("island.noder.txt");
+            dijkstraAlgorithm.readEdgeFile("island.kanter.txt");
 
             int startNode = 0;
             int endNode = 1000;
@@ -217,5 +217,64 @@ public class DijkstraAlgorithm {
             e.printStackTrace();
         }
     }
+}
+
+class AStar {
+
+    private Map<Integer, Node> nodes;
+    // Map that stores a list of all the edges for each node, the key is the nodeNumber.
+    private Map<Integer, ArrayList<Edge>> allEdges;
+
+    AStar(){
+        nodes = new HashMap<>();
+        allEdges = new HashMap<>();
+    }
+
+
+
+
+    /**
+     * Find random landmarks from the graph.
+     * @param graph the graph that contains nodes.
+     * @param num the number of landmarks that will be find
+     * @return random landmarks.
+     */
+    public ArrayList<Node> findLandmarks(HashMap<Integer,Node> graph, int num){
+        ArrayList<Node> landmarks = new ArrayList<>();
+
+        ArrayList nodes = new ArrayList(graph.keySet());
+        Collections.shuffle(nodes);
+
+        for(int i = 0; i < Math.min(num,graph.size()); i++){
+            landmarks.add((Node) nodes.get(i));
+        }
+        return landmarks;
+    }
+
+    public void Distances (HashMap<Integer,Node> graph,ArrayList<Node> landmarks){
+
+        Random random = new Random();
+        DijkstraAlgorithm dijkstraAlgorithm = new DijkstraAlgorithm();
+        HashMap<Integer,HashMap<Integer,Node>> landmarksDistances = new HashMap<>();
+
+        for(Node landmark : landmarks){
+            HashMap<Integer, Integer> distances = new HashMap<>(dijkstraAlgorithm.dijkstra(random.nextInt(graph.size()),landmark.nodeNumber));
+        }
+
+    }
+
+
+    public void AStarAlg(Node startNode, Node endnode){
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        AStar aStar = new AStar();
+        DijkstraAlgorithm dijkstraAlgorithm = new DijkstraAlgorithm();
+        dijkstraAlgorithm.readNodeFile("island.noder.txt");
+        dijkstraAlgorithm.readEdgeFile("island.kanter.txt");
+    }
+
+
 }
 
