@@ -2,7 +2,6 @@ package AlgDatO9;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -17,8 +16,10 @@ class Node {
     double longitude;
     // List of all the edges from the Node
     List<Edge> edges = new ArrayList<>();
-    // Distance from starting Node
+    // Distance from starting Node, initially set to "infinite"
     int distanceFromStartNode = Integer.MAX_VALUE;
+    // Previous node in the shortest path
+    Node previousNode = null;
 
     /**
      * Class constructor.
@@ -108,7 +109,6 @@ public class DijkstrasAlgorithm {
      * Read the file containing information on Edges.
      *
      * @param fileName The name of the file you want to read.
-     * @throws IOException If an Input/Output error occurs.
      */
     public void readEdgeFile(String fileName){
         try{
@@ -137,7 +137,7 @@ public class DijkstrasAlgorithm {
     }
 
     /**
-     * Uses DijkstraÂ´s algorithm to find the shortest path from a start node to an end node.
+     * Uses Dijkstra´s algorithm to find the shortest path from a start node to an end node.
      *
      * @param startNode The starting node.
      * @param endNode   The ending node.
@@ -158,10 +158,15 @@ public class DijkstrasAlgorithm {
         // Initialize the priority queue with the start node.
         // It is used to select the node with the minimum distance for each iteration.
         // It is initialized with a Comparator that prioritizes
-        // nodes based on their distance to the starting node.
+        // nodes based on their distance to the starting node (distanceFromStartNode)
         // The start node is added to the priority queue initially.
         PriorityQueue<Node> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(node -> node.distanceFromStartNode));
         priorityQueue.add(startingNode);
+
+        // Counter for the number of nodes picked from the priority queue
+        int nodesPicked = 0;
+        // Start time of Dijkstra´s algorithm
+        long startTime = System.currentTimeMillis();
 
         // Dijkstra's algorithm.
         // For each iteration it selects the node with the lowest
@@ -171,17 +176,26 @@ public class DijkstrasAlgorithm {
         // This will repeat until the PriorityQueue is empty (meaning we got no more Nodes to explore)
         while (!priorityQueue.isEmpty()) {
             Node currentNode = priorityQueue.poll();
+            nodesPicked++; // Increment the counter
 
             for (Edge edge : currentNode.edges) {
-                int newDistance = currentNode.distanceFromStartNode + edge.length;
+                int newDistance = currentNode.distanceFromStartNode + edge.travelTime;
 
-                // Update the distance if a shorter path is found
+                // Update the distance if a shorter path is found (this is based on the travel time)
                 if (newDistance < edge.toNode.distanceFromStartNode) {
                     edge.toNode.distanceFromStartNode = newDistance;
+                    edge.toNode.previousNode = currentNode;
                     priorityQueue.add(edge.toNode);
                 }
             }
         }
+        // Print out time it took and number of nodes picked out of the queue
+        long endTime = System.currentTimeMillis();
+        long executionTime = endTime - startTime;
+        System.out.println("Dijkstra's Algorithm from Node: " + startNode + " to Node: " + endNode);
+        System.out.println("Execution time in milliseconds: " + executionTime);
+        System.out.println("Amount of processed nodes: " + nodesPicked + "\n");
+
         // Check if the distance to the endNode is still Integer.MAX_VALUE
         // This means it is not possible to reach the endNode from the startNode
         if (endingNode.distanceFromStartNode == Integer.MAX_VALUE) {
@@ -190,20 +204,43 @@ public class DijkstrasAlgorithm {
         return endingNode.distanceFromStartNode;
     }
 
-    public static void main(String[] args){
+    /**
+     * Find the shortest path found from Dijkstra´s algorithm
+     *
+     * @param endNode the end node in Dijkstra´s algorithm
+     * @return List of the shortest path
+     */
+    public List<Node> getPath(int endNode) {
+        List<Node> path = new ArrayList<>();
+        Node current = nodes[endNode];
+
+        while (current != null) {
+            path.add(current);
+            current = current.previousNode;
+        }
+
+        Collections.reverse(path);
+        return path;
+    }
+
+    public static void main(String[] args) {
         DijkstrasAlgorithm dijkstras = new DijkstrasAlgorithm();
+        String nodeFile = "src/AlgDatO9/noder.txt";
         dijkstras.readNodeFile("src/AlgDatO9/noder.txt");
-        System.out.println("NODES ARE READ FROM FILE");
+        System.out.println("DONE READING FROM: " + nodeFile);
         dijkstras.readEdgeFile("src/AlgDatO9/kanter.txt");
-        System.out.println("EDGES ARE READ FROM FILE");
+        String edgeFile = "src/AlgDatO9/kanter.txt";
+        System.out.println("DONE READING FROM: " + edgeFile + "\n");
 
-        int startNode = 7705656;
-        int endNode = 2800567;
-        Date start = new Date();
+        int startNode = 2948202;
+        int endNode = 7826348;
         dijkstras.dijkstra(startNode, endNode);
-        Date end = new Date();
+        List<Node> shortestPath = dijkstras.getPath(endNode);
 
-        double time = (double) end.getTime()-start.getTime();
-        System.out.println("Milliseconds used on Dijkstras Algorithm: " + time);
+        if (!shortestPath.isEmpty()) {
+            System.out.println("The shortest path visited this amount of nodes: " + shortestPath.size());
+        } else {
+            System.out.println("No path found.");
+        }
     }
 }
