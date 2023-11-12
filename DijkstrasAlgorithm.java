@@ -141,7 +141,7 @@ public class DijkstrasAlgorithm {
      *
      * @param startNode The starting node.
      * @param endNode   The ending node.
-     * @return The shortest distance from the start node to the end node. Returns -1 if there is no path.
+     * @return The shortest travel distance from the start node to the end node in centiseconds. Returns -1 if there is no path.
      */
     public int dijkstra(int startNode, int endNode) {
         // Initialize the distance map.
@@ -205,7 +205,7 @@ public class DijkstrasAlgorithm {
     }
 
     /**
-     * Find the shortest path found from Dijkstra´s algorithm
+     * Make a list containing the nodes in the shortest path found from Dijkstra´s algorithm.
      *
      * @param endNode the end node in Dijkstra´s algorithm
      * @return List of the shortest path
@@ -232,15 +232,20 @@ public class DijkstrasAlgorithm {
         String edgeFile = "src/AlgDatO9/kanter.txt";
         System.out.println("DONE READING FROM: " + edgeFile + "\n");
 
-        int startNode = 2948202;
-        int endNode = 7826348;
-        dijkstras.dijkstra(startNode, endNode);
+        int startNode = 2800567;
+        int endNode = 7705656;
+        int travelTime = dijkstras.dijkstra(startNode, endNode) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = dijkstras.getPath(endNode);
 
         if (!shortestPath.isEmpty()) {
-            System.out.println("The shortest path visited this amount of nodes: " + shortestPath.size());
+            System.out.println("The shortest path contains this amount of nodes: " + shortestPath.size());
         } else {
             System.out.println("No path found.");
         }
+
+        int travelTimeHours = travelTime / 3600;
+        int travelTimeMinutes = (travelTime % 3600) / 60;
+        int travelTimeSeconds = (travelTime - travelTimeHours * 3600 - travelTimeMinutes * 60);
+        System.out.println("The shortest path takes this amount of time: " + travelTimeHours + " hour(s), " + travelTimeMinutes + " minute(s) and " + travelTimeSeconds + " second(s)");
     }
 }
