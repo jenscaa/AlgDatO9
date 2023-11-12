@@ -235,10 +235,25 @@ public class DijkstraAlgorithm {
   }
 }
 
+/**
+ * Class representing the preprocessed data of dijkstra algorithm.
+ * <br>Uses the dijkstra algorithm to find the shortest distances from nodes in a graph to a
+ * select few landmark nodes.
+ */
 class PreprocessedDijkstra extends DijkstraAlgorithm {
   Map<Integer, Integer> distance = new HashMap<>();
-  int[][] preprocessedData;
+  //The map of preprocessed data functions much like a two-dimensional array. Used a map instead
+  // of int[][] since we want to store the node numbers of the landmarks in the array AND there
+  // will only be a few landmarks in total. Using a regular 2D array would result a very large
+  // outer array (int[500000][whatever]) where only a few of the elements are actually in use.
+  // This means a lot of unused space and more time spent iterating than necessary. Using a Map
+  // avoids this.
+  Map<Integer, int[]> preprocessedData = new HashMap<>();
 
+  /**
+   * Runs the dijkstra algorithm on the whole graph from the start node.
+   * @param startNode the node where the algorithm starts.
+   */
   private void dijkstra(int startNode) {
     Map<Integer, Node> nodes = super.getNodes();
     Map<Integer, ArrayList<Edge>> allEdges = super.getAllEdges();
@@ -264,21 +279,61 @@ class PreprocessedDijkstra extends DijkstraAlgorithm {
     }
   }
 
-  public void preprosess(ArrayList<Integer> landmarks) {
-    preprocessedData = new int[landmarks.size()][super.getNodes().size()];
+  /**
+   * Preprocesses a graph using the dijkstra algorithm and landmarks as start-nodes.
+   * @param landmarks array containing the node numbers of landmarks to run the dijkstra
+   *                  algorithm from.
+   */
+  private void preprocess(int[] landmarks) {
     for (int landmark : landmarks) {
       dijkstra(landmark);
-      for (int i = 0; i < distance.size(); i++) {
-        preprocessedData[landmark][i] = distance.get(i);
-      }
+      int[] distanceArray = new int[distance.size()];
+      distance.forEach((k, v) -> distanceArray[k] = v);
+      preprocessedData.put(landmark, distanceArray);
     }
   }
 
-  public void writeFromLandmarks(String fileName, ArrayList<Integer> landmarks)
+  /**
+   * Writes preprocessed dijkstra data to a file with the format:<br>
+   * ------------------------------------------------------------------<br>
+   * landmark(1)-distArray(1) ...landmark(n)-distArray(n)<br>
+   * landmarkNum distIndex distance<br>
+   * ------------------------------------------------------------------<br>
+   * For example, only one landmark = 0 may result in:
+   * ------------------------------------------------------------------<br>
+   * 0-112779<br>
+   * 0 0 0<br>
+   * 0 1 1251<br>
+   * 0 2 1422<br>
+   * ...<br>
+   * ------------------------------------------------------------------
+   * @param fileName name of the file containing preprocessed data.
+   * @param landmarks array consisting of node numbers, corresponding to landmarks on a map.
+   * @throws IOException if there was a problem writing to file.
+   */
+  public void writeFromLandmarks(String fileName, int[] landmarks)
       throws IOException {
     BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileName));
-    preprosess(landmarks);
+    preprocess(landmarks);
 
+
+    StringBuilder distanceSize = new StringBuilder();
+    preprocessedData.forEach((k, v) -> distanceSize.append(k.intValue()).append("-").append(v.length).append(" "));
+    bufferedWriter.write(distanceSize.toString().trim());
+
+    preprocessedData.forEach((k, v) -> {
+      for (int i = 0; i < v.length; i++) {
+        String out = "";
+        out = out.concat(k + " " + i +" " + v[i]);
+        try {
+          bufferedWriter.newLine();
+          bufferedWriter.write(out);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    });
+    bufferedWriter.close();
   }
 
   public static void main(String[] args) {
@@ -286,14 +341,15 @@ class PreprocessedDijkstra extends DijkstraAlgorithm {
       PreprocessedDijkstra pd = new PreprocessedDijkstra();
       pd.readNodeFile("island.noder.txt");
       pd.readEdgeFile("island.kanter.txt");
-      int startNode = 0;
-      pd.dijkstra(startNode);
-      System.out.println(pd.distance.get(1000));
+      int[] landmarks = {0};
+      String filename = "island-preprossesert-0.txt";
+      pd.writeFromLandmarks(filename, landmarks);
 
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 }
+
 
 
