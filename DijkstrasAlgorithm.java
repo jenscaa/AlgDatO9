@@ -1,8 +1,6 @@
-package AlgDatO9;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Class that represents a Node.
@@ -73,8 +71,11 @@ class Edge {
  */
 public class DijkstrasAlgorithm {
     // Array that stores all the Nodes based on their nodeNumber
-    private Node[] nodes;
-    private int amountNodes;
+    protected Node[] nodes;
+    // Array that stores all the Nodes with inverted edges based on their nodeNumber
+    protected Node[] invertedNodes;
+    protected int amountNodes;
+    Logger logger = Logger.getLogger(this.getClass().getName());
     /**
      * Read the file containing information on Nodes.
      * This information is added to nodes
@@ -90,6 +91,7 @@ public class DijkstrasAlgorithm {
             amountNodes = Integer.parseInt(stringTokenizer.nextToken());
             // Set the size of nodes equal to the amount of nodes.
             nodes = new Node[amountNodes];
+            invertedNodes = new Node[amountNodes];
             for(int i = 0; i < amountNodes; i++){
                 // Read the file line-for-line.
                 stringTokenizer = new StringTokenizer(bufferedReader.readLine());
@@ -99,9 +101,10 @@ public class DijkstrasAlgorithm {
                 double longitude = Double.parseDouble(stringTokenizer.nextToken());
 
                 Node node = new Node(nodeNumber, latitude, longitude);
-                Node nodeInverted = new Node(nodeNumber, latitude, longitude);
                 nodes[node.nodeNumber] = node;
+                invertedNodes[node.nodeNumber] = node;
             }
+            logger.info("DONE READING: " + fileName);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -132,7 +135,7 @@ public class DijkstrasAlgorithm {
                 Edge edge = new Edge(fromNode, toNode, travelTime, length, speedLimit);
                 nodes[edge.fromNode.nodeNumber].edges.add(edge);
             }
-
+            logger.info("DONE READING: " + fileName);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -155,22 +158,21 @@ public class DijkstrasAlgorithm {
                 // Read the file line-for-line.
                 stringTokenizer = new StringTokenizer(bufferedReader.readLine());
                 // The format for an Edge-file is: fromNode toNode travelTime length speedLimit
-                Node fromNode = nodes[Integer.parseInt(stringTokenizer.nextToken())];
-                Node toNode = nodes[Integer.parseInt(stringTokenizer.nextToken())];
+                Node fromNode = invertedNodes[Integer.parseInt(stringTokenizer.nextToken())];
+                Node toNode = invertedNodes[Integer.parseInt(stringTokenizer.nextToken())];
                 int travelTime = Integer.parseInt(stringTokenizer.nextToken());
                 int length = Integer.parseInt(stringTokenizer.nextToken());
                 int speedLimit = Integer.parseInt(stringTokenizer.nextToken());
 
                 // Edge has toNode and fromNode swapped (to invert the table)
                 Edge edge = new Edge(toNode, fromNode, travelTime, length, speedLimit);
-                nodes[edge.fromNode.nodeNumber].edges.add(edge);
+                invertedNodes[edge.fromNode.nodeNumber].edges.add(edge);
             }
+            logger.info("DONE READING: " + fileName);
         } catch (Exception e){
             e.printStackTrace();
         }
     }
-
-
 
     /**
      * Uses Dijkstra´s algorithm to find the shortest path from a start node to an end node.
@@ -276,14 +278,12 @@ public class DijkstrasAlgorithm {
     public static void main(String[] args) {
         DijkstrasAlgorithm dijkstras = new DijkstrasAlgorithm();
 
-        String nodeFile = "src/AlgdatO9/noder.txt";
+        String nodeFile = "norden.noder.txt";
         dijkstras.readNodeFile(nodeFile);
-        System.out.println("DONE READING: " + nodeFile);
 
-        String edgeFile = "src/AlgdatO9/kanter.txt";
+        String edgeFile = "norden.kanter.txt";
         dijkstras.readEdgeFile(edgeFile);
         //dijkstras.readEdgeFileInverted(edgeFile);
-        System.out.println("DONE READING: " + edgeFile + "\n");
 
         int startNode = 2948202 ;
         int endNode = 7826348;
@@ -300,5 +300,168 @@ public class DijkstrasAlgorithm {
         int travelTimeMinutes = (travelTime % 3600) / 60;
         int travelTimeSeconds = (travelTime - travelTimeHours * 3600 - travelTimeMinutes * 60);
         System.out.println("The shortest path takes this amount of time: " + travelTimeHours + " hour(s), " + travelTimeMinutes + " minute(s) and " + travelTimeSeconds + " second(s)\n");
+    }
+}
+
+class PreprocessedDijkstra extends DijkstrasAlgorithm {
+    Map<Integer, Integer> driveTime = new HashMap<>();
+    //The map of preprocessed data functions much like a two-dimensional array. Used a map instead
+    // of int[][] since we want to store the node numbers of the landmarks in the array AND there
+    // will only be a few landmarks in total. Using a regular 2D array would result a very large
+    // outer array (int[500000][whatever]) where only a few of the elements are actually in use.
+    // This means a lot of unused space and more time spent iterating than necessary. Using a Map
+    // avoids this.
+    Map<Integer, int[]> landmarkToNodes = new HashMap<>();
+    
+    Map<Integer, int[]> nodesToLandmark = new HashMap<>();
+    
+    /**
+     * Runs the dijkstra algorithm on the whole graph from the start node.
+     * @param startNode the node where the algorithm starts.
+     */
+    private void dijkstra(int startNode, Node[] nodes) {
+        Map<Integer, List<Edge>> allEdges = new HashMap<>();
+        for (Node n : nodes) {
+            allEdges.put(n.nodeNumber, n.edges);
+            driveTime.put(n.nodeNumber, Integer.MAX_VALUE);
+        }
+        driveTime.put(startNode, 0);
+        
+        PriorityQueue<Integer> priorityQueue
+                = new PriorityQueue<>(Comparator.comparingInt(driveTime::get));
+        priorityQueue.add(startNode);
+        
+        while (!priorityQueue.isEmpty()) {
+            int currentNode = priorityQueue.poll();
+            
+            for (Edge edge : allEdges.get(currentNode)) {
+                int newDist = driveTime.get(currentNode) + edge.length;
+                if (newDist < driveTime.get(edge.toNode.nodeNumber)) {
+                    driveTime.put(edge.toNode.nodeNumber, newDist);
+                    priorityQueue.add(edge.toNode.nodeNumber);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Preprocesses a graph using the dijkstra algorithm and landmarks as start-nodes.
+     * @param landmarks array containing the node numbers of landmarks to run the dijkstra
+     *                  algorithm from.
+     */
+    private void preprocess(int[] landmarks) {
+        for (int landmark : landmarks) {
+            
+            dijkstra(landmark, nodes);
+            int[] landmarkToNodesDriveTime = new int[driveTime.size()];
+            driveTime.forEach((k, v) -> landmarkToNodesDriveTime[k] = v);
+            landmarkToNodes.put(landmark, landmarkToNodesDriveTime);
+            
+            dijkstra(landmark, invertedNodes);
+            int[] nodesToLandmarkDriveTime = new int[driveTime.size()];
+            driveTime.forEach((k, v) -> nodesToLandmarkDriveTime[k] = v);
+            nodesToLandmark.put(landmark, nodesToLandmarkDriveTime);
+            
+        }
+    }
+    
+    /**
+     * Writes preprocessed dijkstra data to a file with the format:<br>
+     * ------------------------------------------------------------------<br>
+     * landmark(1)-distArray(1) ...landmark(n)-distArray(n)<br>
+     * landmarkNum distIndex distance<br>
+     * ------------------------------------------------------------------<br>
+     * For example, only one landmark = 0 may result in:
+     * ------------------------------------------------------------------<br>
+     * 0-112779<br>
+     * 0 0 0<br>
+     * 0 1 1251<br>
+     * 0 2 1422<br>
+     * ...<br>
+     * ------------------------------------------------------------------
+     * @param fileName name of the file containing preprocessed data.
+     * @param landmarks array consisting of node numbers, corresponding to landmarks on a map.
+     * @throws IOException if there was a problem writing to file.
+     */
+    public void writeFromLandmarks(String fileName, int[] landmarks)
+            throws IOException {
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileName));
+        preprocess(landmarks);
+        
+        
+        StringBuilder distanceSize = new StringBuilder();
+        landmarkToNodes.forEach((k, v) -> {
+            try {
+                distanceSize.append(k.intValue()).append("-").append(v.length);
+                bufferedWriter.write(distanceSize.toString());
+                for (int i = 0; i < v.length; i++) {
+                    String out = "";
+                    out = out.concat(k + " " + i + " " + v[i]);
+                    bufferedWriter.newLine(); bufferedWriter.write(out);
+                }
+                for (int i = 0; i < v.length; i++) {
+                    String out = "";
+                    out = out.concat(i + " " + k + " " + nodesToLandmark.get(k)[i]);
+                    bufferedWriter.newLine(); bufferedWriter.write(out);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        bufferedWriter.close();
+    }
+    
+    //TODO: Edit this method so it works. Then implement the ALT-Algorithm.
+    /**
+     * Reads a preprocessed file containing the shortest distance between landmarks and all other
+     * nodes in a graph.
+     * @param filename name of file to read.
+     * @return The {@code Map<Integer, int[]>} containing landmarks, and distances to other nodes.
+     * @throws Exception if it failed to read from the file.
+     */
+    public Map<Integer, int[]> readFromLandmarks(String filename) throws Exception {
+        Map<Integer, int[]> landmarksData= new HashMap<>();
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(filename));
+            StringTokenizer stringTokenizer = new StringTokenizer(bufferedReader.readLine(), " ");
+            
+            //initializes the landmarksData Map (most importantly the array inside the map) by parsing
+            // the first line of the file. The format is landmark-arraySize landmark-arraySize ...
+            int firstLineCount = stringTokenizer.countTokens()/2;
+            for (int i = 0; i < firstLineCount; i++) {
+                int landmark = Integer.parseInt(stringTokenizer.nextToken());
+                int arraySize = Integer.parseInt(stringTokenizer.nextToken());
+                landmarksData.put(landmark, new int[arraySize]);
+            }
+            String nextLine = bufferedReader.readLine();
+            while (nextLine != null) {
+                stringTokenizer = new StringTokenizer(nextLine);
+                int landmark = Integer.parseInt(stringTokenizer.nextToken());
+                int endNode = Integer.parseInt(stringTokenizer.nextToken());
+                int minDistance = Integer.parseInt(stringTokenizer.nextToken());
+                landmarksData.get(landmark)[endNode] = minDistance;
+                nextLine = bufferedReader.readLine();
+            }
+            bufferedReader.close();
+        }catch (Exception e) {
+            throw new Exception(e);
+        }
+        return landmarksData;
+    }
+    
+    public static void main(String[] args) {
+        try {
+            PreprocessedDijkstra pd = new PreprocessedDijkstra();
+            pd.readNodeFile("norden.noder.txt");
+            pd.readEdgeFile("norden.kanter.txt");
+            String filename = "norden-preprossesert.txt";
+            int[] landmarks = new int[]{1102516, 3047524, 4392562, 6101939};
+            
+            pd.writeFromLandmarks(filename, landmarks);
+            //Map<Integer, int[]> data = pd.readFromLandmarks(filename);
+            
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
