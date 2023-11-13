@@ -1,5 +1,7 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -336,16 +338,50 @@ class PreprocessedDijkstra extends DijkstraAlgorithm {
     bufferedWriter.close();
   }
 
+  /**
+   * Reads a preprocessed file containing the shortest distance between landmarks and all other
+   * nodes in a graph.
+   * @param filename name of file to read.
+   * @return The {@code Map<Integer, int[]>} containing landmarks, and distances to other nodes.
+   * @throws Exception if it failed to read from the file.
+   */
+  public Map<Integer, int[]> readFromLandmarks(String filename) throws Exception {
+    Map<Integer, int[]> landmarksData= new HashMap<>();
+    try {
+      BufferedReader bufferedReader = new BufferedReader(new FileReader(filename));
+      StringTokenizer stringTokenizer = new StringTokenizer(bufferedReader.readLine(), " ");
+
+      //initializes the landmarksData Map (most importantly the array inside the map) by parsing
+      // the first line of the file. The format is landmark-arraySize landmark-arraySize ...
+      int firstLineCount = stringTokenizer.countTokens()/2;
+      for (int i = 0; i < firstLineCount; i++) {
+        int landmark = Integer.parseInt(stringTokenizer.nextToken());
+        int arraySize = Integer.parseInt(stringTokenizer.nextToken());
+        landmarksData.put(landmark, new int[arraySize]);
+      }
+      String nextLine = bufferedReader.readLine();
+      while (nextLine != null) {
+        stringTokenizer = new StringTokenizer(nextLine);
+        int landmark = Integer.parseInt(stringTokenizer.nextToken());
+        int endNode = Integer.parseInt(stringTokenizer.nextToken());
+        int minDistance = Integer.parseInt(stringTokenizer.nextToken());
+        landmarksData.get(landmark)[endNode] = minDistance;
+        nextLine = bufferedReader.readLine();
+      }
+      bufferedReader.close();
+    }catch (Exception e) {
+      throw new Exception(e);
+    }
+    return landmarksData;
+  }
+
   public static void main(String[] args) {
     try {
       PreprocessedDijkstra pd = new PreprocessedDijkstra();
-      pd.readNodeFile("island.noder.txt");
-      pd.readEdgeFile("island.kanter.txt");
-      int[] landmarks = {0};
       String filename = "island-preprossesert-0.txt";
-      pd.writeFromLandmarks(filename, landmarks);
+      Map<Integer, int[]> data = pd.readFromLandmarks(filename);
 
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
