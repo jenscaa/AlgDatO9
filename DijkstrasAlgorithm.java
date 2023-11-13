@@ -227,8 +227,9 @@ public class DijkstrasAlgorithm {
                 // Here we also bypass the problem with PriorityQueue
                 // not allowing us to directly change priorities, by
                 // re-adding the node with the new priority (travel time from starting node)
-                // after having it removed
+                // after having it removed (if it already is in the queue)
                 if (newTravelTime < edge.toNode.travelTimeFromStartNode) {
+                    priorityQueue.remove(edge.toNode);
                     edge.toNode.travelTimeFromStartNode = newTravelTime;
                     edge.toNode.previousNode = currentNode;
                     priorityQueue.add(edge.toNode);
@@ -275,17 +276,17 @@ public class DijkstrasAlgorithm {
     public static void main(String[] args) {
         DijkstrasAlgorithm dijkstras = new DijkstrasAlgorithm();
 
-        String nodeFile = "noder.txt";
+        String nodeFile = "src/AlgdatO9/noder.txt";
         dijkstras.readNodeFile(nodeFile);
         System.out.println("DONE READING: " + nodeFile);
 
-        String edgeFile = "kanter.txt";
-        //dijkstras.readEdgeFile(edgeFile);
-        dijkstras.readEdgeFileInverted(edgeFile);
+        String edgeFile = "src/AlgdatO9/kanter.txt";
+        dijkstras.readEdgeFile(edgeFile);
+        //dijkstras.readEdgeFileInverted(edgeFile);
         System.out.println("DONE READING: " + edgeFile + "\n");
 
-        int startNode = 7826348;
-        int endNode = 2948202;
+        int startNode = 2948202 ;
+        int endNode = 7826348;
         int travelTime = dijkstras.dijkstra(startNode, endNode, dijkstras.nodes) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = dijkstras.getPath(endNode, dijkstras.nodes);
 
