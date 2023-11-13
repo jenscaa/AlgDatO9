@@ -16,8 +16,8 @@ class Node {
     double longitude;
     // List of all the edges from the Node
     List<Edge> edges = new ArrayList<>();
-    // Distance from starting Node, initially set to "infinite"
-    int distanceFromStartNode = Integer.MAX_VALUE;
+    // Travel distance from starting Node, initially set to "infinite"
+    int travelDistanceFromStartNode = Integer.MAX_VALUE;
     // Previous node in the shortest path
     Node previousNode = null;
 
@@ -139,29 +139,24 @@ public class DijkstrasAlgorithm {
     /**
      * Uses Dijkstra´s algorithm to find the shortest path from a start node to an end node.
      *
-     * @param startNode The starting node.
-     * @param endNode   The ending node.
-     * @return The shortest travel distance from the start node to the end node in centiseconds. Returns -1 if there is no path.
+     * @param startNodeNumber The starting node´s node number.
+     * @param endNodeNumber   The ending node´s node number.
+     * @return The shortest travel time from the start node to the end node in centiseconds. Returns -1 if there is no path.
      */
-    public int dijkstra(int startNode, int endNode) {
-        // Initialize the distance map.
-        // It is used to store the minimum distance
-        // from the start node to each other node.
-        // Initially, all distances are set to
+    public int dijkstra(int startNodeNumber, int endNodeNumber) {
+        Node startNode = nodes[startNodeNumber];
+        Node endNode = nodes[endNodeNumber];
+        // Initially, all nodes have their travel distance to the start node set to
         // Integer.MAX_VALUE to represent "infinity",
         // except for the startNode which is set to 0.
+        startNode.travelDistanceFromStartNode = 0;
 
-        Node startingNode = nodes[startNode];
-        Node endingNode = nodes[endNode];
-        startingNode.distanceFromStartNode = 0;
-
-        // Initialize the priority queue with the start node.
-        // It is used to select the node with the minimum distance for each iteration.
-        // It is initialized with a Comparator that prioritizes
-        // nodes based on their distance to the starting node (distanceFromStartNode)
-        // The start node is added to the priority queue initially.
-        PriorityQueue<Node> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(node -> node.distanceFromStartNode));
-        priorityQueue.add(startingNode);
+        // The priority queue is used to select the node with the shortest travel distance
+        // to the starting node for each iteration. The priority queue is initialized
+        // with a Comparator that prioritizes nodes based on their travel distance to the starting node
+        // The start node is added to the priority queue initially (since we start searching from this node)
+        PriorityQueue<Node> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(node -> node.travelDistanceFromStartNode));
+        priorityQueue.add(startNode);
 
         // Counter for the number of nodes picked from the priority queue
         int nodesPicked = 0;
@@ -169,21 +164,36 @@ public class DijkstrasAlgorithm {
         long startTime = System.currentTimeMillis();
 
         // Dijkstra's algorithm.
-        // For each iteration it selects the node with the lowest
-        // distance from the starting node and checks its edges.
-        // For each edge, if the new distance is shorter than any
-        // of the other edges, then the Node that the edge leads to is added to distances.
+        // For each iteration it selects the node with the shortest
+        // travel distance from the starting node and checks its edges.
+        // For each edge, if the new travel distance is shorter than any
+        // of the other edges, then the Node that the edge leads to
+        // has its distance from start node updated, previous node
+        // updated, and it is added to the priority queue.
         // This will repeat until the PriorityQueue is empty (meaning we got no more Nodes to explore)
+        // OR if the end node has been removed from the queue
+        // since we do not need to search further than the end node.
         while (!priorityQueue.isEmpty()) {
             Node currentNode = priorityQueue.poll();
-            nodesPicked++; // Increment the counter
+            nodesPicked++; // Increment the counter for nodes picked from queue
+
+            // Check if the current node is the end node
+            // meaning we can stop processing.
+            // If we do not do this, then every node will be checked
+            if (currentNode == endNode) {
+                break;
+            }
 
             for (Edge edge : currentNode.edges) {
-                int newDistance = currentNode.distanceFromStartNode + edge.travelTime;
+                int newDistance = currentNode.travelDistanceFromStartNode + edge.travelTime;
 
                 // Update the distance if a shorter path is found (this is based on the travel time)
-                if (newDistance < edge.toNode.distanceFromStartNode) {
-                    edge.toNode.distanceFromStartNode = newDistance;
+                // Here we also bypass the problem with PriorityQueue
+                // not allowing us to directly change priorities, by
+                // re-adding the node with the new priority (distance from starting node)
+                // after having it removed
+                if (newDistance < edge.toNode.travelDistanceFromStartNode) {
+                    edge.toNode.travelDistanceFromStartNode = newDistance;
                     edge.toNode.previousNode = currentNode;
                     priorityQueue.add(edge.toNode);
                 }
@@ -192,33 +202,35 @@ public class DijkstrasAlgorithm {
         // Print out time it took and number of nodes picked out of the queue
         long endTime = System.currentTimeMillis();
         long executionTime = endTime - startTime;
-        System.out.println("Dijkstra's Algorithm from Node: " + startNode + " to Node: " + endNode);
+        System.out.println("Dijkstra's Algorithm from Node: " + startNodeNumber + " to Node: " + endNodeNumber);
         System.out.println("Execution time in milliseconds: " + executionTime);
         System.out.println("Amount of processed nodes: " + nodesPicked + "\n");
 
         // Check if the distance to the endNode is still Integer.MAX_VALUE
         // This means it is not possible to reach the endNode from the startNode
-        if (endingNode.distanceFromStartNode == Integer.MAX_VALUE) {
+        if (endNode.travelDistanceFromStartNode == Integer.MAX_VALUE) {
             return -1;
         }
-        return endingNode.distanceFromStartNode;
+        return endNode.travelDistanceFromStartNode;
     }
 
     /**
      * Make a list containing the nodes in the shortest path found from Dijkstra´s algorithm.
      *
      * @param endNode the end node in Dijkstra´s algorithm
-     * @return List of the shortest path
+     * @return List of the nodes in the shortest path
      */
     public List<Node> getPath(int endNode) {
         List<Node> path = new ArrayList<>();
-        Node current = nodes[endNode];
-
-        while (current != null) {
-            path.add(current);
-            current = current.previousNode;
+        Node currentNode = nodes[endNode];
+        // We retrace the shortest path found from Dijkstra backwards
+        // When the currentNode is null means we have reach the startNode
+        // since it does not have a previous node.
+        while (currentNode != null) {
+            path.add(currentNode);
+            currentNode = currentNode.previousNode;
         }
-
+        // We then use Collections.reverse to get the correct order of the path.
         Collections.reverse(path);
         return path;
     }
@@ -232,8 +244,8 @@ public class DijkstrasAlgorithm {
         String edgeFile = "src/AlgDatO9/kanter.txt";
         System.out.println("DONE READING FROM: " + edgeFile + "\n");
 
-        int startNode = 2800567;
-        int endNode = 7705656;
+        int startNode =  7826348;
+        int endNode = 2948202;
         int travelTime = dijkstras.dijkstra(startNode, endNode) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = dijkstras.getPath(endNode);
 
