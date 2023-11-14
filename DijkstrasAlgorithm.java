@@ -170,6 +170,40 @@ public class DijkstrasAlgorithm {
         }
     }
 
+    /**
+     * Read the file containing information on
+     * the points of interests. Get a Map that contains
+     * every point of interest of a specific type.
+     *
+     * @param fileName The name of the file you want to read.
+     * @param type Integer representing the type of node you want.
+     * @return Map containing every point of a specific type.
+     */
+    public Map<Integer, Node> readPointOfInterestFile(String fileName, int type) {
+        // Map that contains the node of the wanted type
+        Map<Integer, Node> nodeMap = new HashMap<>();
+        try {
+            // Using BufferedReader and StringTokenizer to read from file, should be the most optimal.
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName));
+            StringTokenizer stringTokenizer = new StringTokenizer(bufferedReader.readLine());
+            // The amount of edges is on the first line of the file.
+            int Interessepekt = Integer.parseInt(stringTokenizer.nextToken());
+            for (int i = 0; i < Interessepekt; i++) {
+                // Read the file line-for-line.
+                stringTokenizer = new StringTokenizer(bufferedReader.readLine());
+                // The format for an Edge-file is: fromNode toNode travelTime length speedLimit
+                int nodeNumber = Integer.parseInt(stringTokenizer.nextToken());
+                int nodeType = Integer.parseInt(stringTokenizer.nextToken());
+                String name = stringTokenizer.nextToken();
+                if ((nodeType & type) == type) {
+                    nodeMap.put(nodeNumber, nodes[nodeNumber]);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return nodeMap;
+    }
 
 
     /**
@@ -177,11 +211,13 @@ public class DijkstrasAlgorithm {
      *
      * @param startNodeNumber The starting node´s node number.
      * @param endNodeNumber   The ending node´s node number.
+     * @param nodeArray       Array of nodes that will be searched through.
      * @return The shortest travel time from the start node to the end node in centiseconds. Returns -1 if there is no path.
      */
     public int dijkstra(int startNodeNumber, int endNodeNumber, Node[] nodeArray) {
         Node startNode = nodeArray[startNodeNumber];
         Node endNode = nodeArray[endNodeNumber];
+
         // Initially, all nodes have their travel time to the start node set to
         // Integer.MAX_VALUE to represent "infinity",
         // except for the startNode which is set to 0.
@@ -222,7 +258,6 @@ public class DijkstrasAlgorithm {
 
             for (Edge edge : currentNode.edges) {
                 int newTravelTime = currentNode.travelTimeFromStartNode + edge.travelTime;
-
                 // Update the travel time if a quicker path is found.
                 // Here we also bypass the problem with PriorityQueue
                 // not allowing us to directly change priorities, by
@@ -252,6 +287,91 @@ public class DijkstrasAlgorithm {
     }
 
     /**
+     * Uses Dijkstra´s algorithm to find the points of interest
+     * that are the closest to the starting node.
+     *
+     * @param startNodeNumber The starting node´s node number.
+     * @param nodeArray       The array of nodes that will be searched through
+     * @param nodeMapPointOfInterest         Map containg the nodes with the wanted point of interest
+     * @param amountOfPointsOfInterests      Integer representing how many points of interest you want to find
+     * @return List of the points of interests, as Nodes, that are closest to the starting node, the amount is specified.
+     */
+    public List<Node> dijkstraFindPointOfInterest(int startNodeNumber, Node[] nodeArray, Map<Integer, Node> nodeMapPointOfInterest, int amountOfPointsOfInterests) {
+        Node startNode = nodeArray[startNodeNumber];
+        Node endNode = nodeArray[nodeArray.length - 1];
+        List<Node> nodesOfInterests = new ArrayList<>();
+
+        // Initially, all nodes have their travel time to the start node set to
+        // Integer.MAX_VALUE to represent "infinity",
+        // except for the startNode which is set to 0.
+        startNode.travelTimeFromStartNode = 0;
+
+        // The priority queue is used to select the node with the shortest travel time
+        // to the starting node for each iteration. The priority queue is initialized
+        // with a Comparator that prioritizes nodes based on their travel time to the starting node
+        // The start node is added to the priority queue initially (since we start searching from this node)
+        PriorityQueue<Node> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(node -> node.travelTimeFromStartNode));
+        priorityQueue.add(startNode);
+
+        // Counter for the number of nodes picked from the priority queue
+        int nodesPicked = 0;
+        // Start time of Dijkstra´s algorithm
+        long startTime = System.currentTimeMillis();
+
+        // Dijkstra's algorithm.
+        // For each iteration it selects the node with the shortest
+        // travel time from the starting node and checks its edges.
+        // For each edge, if the new travel time is shorter than any
+        // of the other edges, then the Node that the edge leads to
+        // has its travel time from start node updated, previous node
+        // updated, and it is added to the priority queue.
+        // This will repeat until the PriorityQueue is empty (meaning we got no more Nodes to explore)
+        // OR if the end node has been removed from the queue
+        // since we do not need to search further than the end node.
+        while (!priorityQueue.isEmpty()) {
+            Node currentNode = priorityQueue.poll();
+            nodesPicked++; // Increment the counter for nodes picked from queue
+
+            // Check if the current node is the end node
+            // meaning we can stop processing.
+            // If we do not do this, then every node will be checked (unnecessary overhead).
+            if (currentNode == endNode) {
+                break;
+            }
+
+            if (nodeMapPointOfInterest.containsKey(currentNode.nodeNumber)) {
+                nodesOfInterests.add(currentNode);
+                if(nodesOfInterests.size() == amountOfPointsOfInterests) {
+                    break;
+                }
+            }
+
+            for (Edge edge : currentNode.edges) {
+                int newTravelTime = currentNode.travelTimeFromStartNode + edge.travelTime;
+                // Update the travel time if a quicker path is found.
+                // Here we also bypass the problem with PriorityQueue
+                // not allowing us to directly change priorities, by
+                // re-adding the node with the new priority (travel time from starting node)
+                // after having it removed (if it already is in the queue)
+                if (newTravelTime < edge.toNode.travelTimeFromStartNode) {
+                    priorityQueue.remove(edge.toNode);
+                    edge.toNode.travelTimeFromStartNode = newTravelTime;
+                    edge.toNode.previousNode = currentNode;
+                    priorityQueue.add(edge.toNode);
+                }
+            }
+        }
+        // Print out time it took and number of nodes picked out of the queue
+        long endTime = System.currentTimeMillis();
+        long executionTime = (endTime - startTime);
+        System.out.println("Dijkstra's Algorithm from Node: " + startNodeNumber + " to surrounding points of interest");
+        System.out.println("Execution time in milliseconds: " + executionTime);
+        System.out.println("Amount of processed nodes: " + nodesPicked);
+
+        return nodesOfInterests;
+    }
+
+    /**
      * Make a list containing the nodes in the shortest path found from Dijkstra´s algorithm.
      *
      * @param endNodeNumber the end node´s node number used in Dijkstra´s algorithm
@@ -272,21 +392,19 @@ public class DijkstrasAlgorithm {
         return path;
     }
 
-
     public static void main(String[] args) {
         DijkstrasAlgorithm dijkstras = new DijkstrasAlgorithm();
 
         String nodeFile = "src/AlgdatO9/noder.txt";
         dijkstras.readNodeFile(nodeFile);
         System.out.println("DONE READING: " + nodeFile);
-
         String edgeFile = "src/AlgdatO9/kanter.txt";
         dijkstras.readEdgeFile(edgeFile);
         //dijkstras.readEdgeFileInverted(edgeFile);
         System.out.println("DONE READING: " + edgeFile + "\n");
 
-        int startNode = 2948202 ;
-        int endNode = 7826348;
+        int startNode = 5009309;
+        int endNode = 999080;
         int travelTime = dijkstras.dijkstra(startNode, endNode, dijkstras.nodes) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = dijkstras.getPath(endNode, dijkstras.nodes);
 
@@ -294,6 +412,9 @@ public class DijkstrasAlgorithm {
             System.out.println("The shortest path contains this amount of nodes: " + shortestPath.size());
         } else {
             System.out.println("No path found.");
+        }
+        for(int i=0; i < shortestPath.size(); i+=38) {
+            System.out.println(shortestPath.get(i).latitude + "," + shortestPath.get(i).longitude);
         }
 
         int travelTimeHours = travelTime / 3600;
