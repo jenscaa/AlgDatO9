@@ -377,7 +377,7 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
     preprocess(landmarks, nodes);
 
     StringBuilder distanceSize = new StringBuilder();
-    preprocessedData.forEach((k, v) -> distanceSize.append(k.intValue()).append("-").append(v.length).append(" "));
+    preprocessedData.forEach((k, v) -> distanceSize.append(k.intValue()).append(" ").append(v.length).append(" "));
     bufferedWriter.write(distanceSize.toString().trim());
 
     preprocessedData.forEach((k, v) -> {
