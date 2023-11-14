@@ -68,9 +68,6 @@ class Edge {
     }
 }
 
-/**
- *
- */
 public class DijkstrasAlgorithm {
     // Array that stores all the Nodes based on their nodeNumber
     private Node[] nodes;
@@ -173,8 +170,6 @@ public class DijkstrasAlgorithm {
             e.printStackTrace();
         }
     }
-
-
 
     /**
      * Uses Dijkstra´s algorithm to find the shortest path from a start node to an end node.
@@ -319,32 +314,6 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
   // avoids this.
   Map<Integer, int[]> preprocessedData = new HashMap<>();
 
-
-  /*private void dijkstra(int startNode) {
-    Map<Integer, Node> nodes = super.getNodes();
-    Map<Integer, ArrayList<Edge>> allEdges = super.getAllEdges();
-    for (int node : nodes.keySet()) {
-      distance.put(node, Integer.MAX_VALUE);
-    }
-    distance.put(startNode, 0);
-
-    PriorityQueue<Integer> priorityQueue
-        = new PriorityQueue<>(Comparator.comparingInt(distance::get));
-    priorityQueue.add(startNode);
-
-    while (!priorityQueue.isEmpty()) {
-      int currentNode = priorityQueue.poll();
-
-      for (Edge edge : allEdges.get(currentNode)) {
-        int newDist = distance.get(currentNode) + edge.length;
-        if (newDist < distance.get(edge.toNode)) {
-          distance.put(edge.toNode, newDist);
-          priorityQueue.add(edge.toNode);
-        }
-      }
-    }
-  }*/
-
   private Map<Integer, Integer> dijkstraTravelTime(int startNodeNumber, Node[] nodeArray) {
       Map<Integer, Integer> travelTimeMap = new HashMap<>();
       for (Node node : nodeArray) {
@@ -370,7 +339,6 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
       }
       return travelTimeMap;
   }
-
   /**
    * Preprocesses a graph using the dijkstra algorithm and landmarks as start-nodes.
    * @param landmarks array containing the node numbers of landmarks to run the dijkstra
