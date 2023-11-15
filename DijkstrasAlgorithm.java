@@ -417,16 +417,14 @@ public class DijkstrasAlgorithm {
     public static void main(String[] args) {
         DijkstrasAlgorithm dijkstras = new DijkstrasAlgorithm();
 
-        String nodeFile = "norden.noder.txt";
+        String nodeFile = "noder.txt";
         dijkstras.readNodeFile(nodeFile);
 
-        String edgeFile = "norden.kanter.txt";
+        String edgeFile = "kanter.txt";
         dijkstras.readEdgeFile(edgeFile);
-        //dijkstras.readEdgeFileInverted(edgeFile);
-        System.out.println("DONE READING: " + edgeFile + "\n");
 
-        int startNode = 7826348 ;
-        int endNode = 2948202;
+        int startNode = 5009309 ;
+        int endNode = 999080;
         int travelTime = dijkstras.dijkstra(startNode, endNode, dijkstras.nodes) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = dijkstras.getPath(endNode, dijkstras.nodes);
 
@@ -435,14 +433,17 @@ public class DijkstrasAlgorithm {
         } else {
             System.out.println("No path found.");
         }
-        for(int i=0; i < shortestPath.size(); i+=38) {
-            System.out.println(shortestPath.get(i).latitude + "," + shortestPath.get(i).longitude);
-        }
 
         int travelTimeHours = travelTime / 3600;
         int travelTimeMinutes = (travelTime % 3600) / 60;
         int travelTimeSeconds = (travelTime - travelTimeHours * 3600 - travelTimeMinutes * 60);
         System.out.println("The shortest path takes this amount of time: " + travelTimeHours + " hour(s), " + travelTimeMinutes + " minute(s) and " + travelTimeSeconds + " second(s)\n");
+
+        /*
+        for(int i=0; i < shortestPath.size(); i+=38) {
+            System.out.println(shortestPath.get(i).latitude + "," + shortestPath.get(i).longitude);
+        }
+         */
     }
 }
 
@@ -590,13 +591,18 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
         }
     }
 
+    /**
+     * Main method - Run this to generate preprocessed file.
+     *
+     * @param args String[].
+     */
     public static void main(String[] args) {
         try {
             PreprocessedDijkstra pd = new PreprocessedDijkstra();
-            pd.readNodeFile("norden.noder.txt");
-            pd.readEdgeFile("norden.kanter.txt");
-            pd.readEdgeFileInverted("norden.kanter.txt");
-            String filename = "norden-preprossesert.txt";
+            pd.readNodeFile("noder.txt");
+            pd.readEdgeFile("kanter.txt");
+            pd.readEdgeFileInverted("kanter.txt");
+            String filename = "preprossesert.txt";
             int[] landmarks = new int[]{1102516, 3047524, 4392562, 6101939};
             pd.writeFromLandmarks(filename, landmarks);
         } catch (Exception e) {
@@ -717,12 +723,12 @@ class AltAlgorithm extends DijkstrasAlgorithm {
 
         PreprocessedDijkstra pd = new PreprocessedDijkstra();
         AltAlgorithm altAlgorithm = new AltAlgorithm();
-        pd.readFromLandmarks("norden-preprossesert.txt", altAlgorithm.landmarkToNodes, altAlgorithm.nodesToLandmark);
+        pd.readFromLandmarks("preprossesert.txt", altAlgorithm.landmarkToNodes, altAlgorithm.nodesToLandmark);
 
-        String nodeFile = "norden.noder.txt";
+        String nodeFile = "noder.txt";
         altAlgorithm.readNodeFile(nodeFile);
 
-        String edgeFile = "norden.kanter.txt";
+        String edgeFile = "kanter.txt";
         altAlgorithm.readEdgeFile(edgeFile);
 
         int startNode = 5009309;
