@@ -468,55 +468,12 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
     public static void main(String[] args) {
         try {
             PreprocessedDijkstra pd = new PreprocessedDijkstra();
-            pd.readFromLandmarks("norden-preprossesert.txt", pd.landmarkToNodes, pd.nodesToLandmark);
-    
-            int startNode = 1102516;
-            int endNode = 123465;
-    
-            int driveTime = pd.landmarkToNodes.get(startNode)[endNode] / 100;
-    
-            System.out.println("The shortest path takes this amount of time: " + driveTime/3600 + " hour(s), " + (driveTime%3600)/60 + " minute(s) and 0 second(s)");
-            
-            
-            /*
-            PreprocessedDijkstra pd = new PreprocessedDijkstra();
             pd.readNodeFile("norden.noder.txt");
             pd.readEdgeFile("norden.kanter.txt");
             pd.readEdgeFileInverted("norden.kanter.txt");
             String filename = "norden-preprossesert.txt";
             int[] landmarks = new int[]{1102516, 3047524, 4392562, 6101939};
             pd.writeFromLandmarks(filename, landmarks);
-             */
-            
-            
-            /*
-            PreprocessedDijkstra pd = new PreprocessedDijkstra();
-            pd.readFromLandmarks("norden-preprossesert.txt", pd.landmarkToNodes, pd.nodesToLandmark);
-            
-            int startNode = 1102516;
-            int endNode = 123465;
-    
-            for (int i : pd.landmarkToNodes.keySet()) {
-                System.out.println(i);
-            }
-            
-            int driveTime = pd.landmarkToNodes.get(startNode)[endNode] / 100;
-    
-            System.out.println("The shortest path takes this amount of time: " + driveTime/3600 + " hour(s), " + (driveTime%3600)/60 + " minute(s) and 0 second(s)");
-            
-            try {
-                // Sleep for 15 seconds (15000 milliseconds)
-                Thread.sleep(15000);
-        
-                // The code here will be executed after the sleep duration
-                System.out.println("Awake after 15 seconds!");
-            } catch (InterruptedException e) {
-                // Handle the InterruptedException (thrown if another thread interrupts the current thread)
-                e.printStackTrace();
-            }
-            
-             */
-            
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -524,21 +481,46 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
 }
 
 class AltAlgorithm extends DijkstrasAlgorithm {
-    
+
+    /**
+     * Returns estimate from behind start.
+     *
+     * @param n the current node number.
+     * @param L the landmark node number.
+     * @param goal the end node number.
+     * @return estimate.
+     */
     public int behindStart(int n, int L, int goal) {
+        // If L is after the goal, then the estimate is negative.
         return landmarkToNodes.get(L)[goal] - landmarkToNodes.get(L)[n];
     }
-    
+
+    /**
+     * Returns estimate from behind start.
+     *
+     * @param n the current node number.
+     * @param L the landmark node number.
+     * @param goal the end node number.
+     * @return estimate.
+     */
     public int afterGoal(int n, int L, int goal) {
+        // If L is behind the start, then the estimate is negative.
         return nodesToLandmark.get(L)[n] - nodesToLandmark.get(L)[goal];
     }
-    
+
+    /**
+     * Returns the highest estimate from all landmarks.
+     *
+     * @param currentNode the current node number.
+     * @param endNode the end node number.
+     * @return highest estimate.
+     */
     public int estimate(int currentNode, int endNode) {
         int highestEstimate = 0;
         for (int landMark : nodesToLandmark.keySet()) {
             int afterGoal = afterGoal(currentNode, landMark, endNode);
             int behindStart = behindStart(currentNode, landMark, endNode);
-            
+
             if (afterGoal > highestEstimate) {
                 highestEstimate = afterGoal;
             }
@@ -548,14 +530,21 @@ class AltAlgorithm extends DijkstrasAlgorithm {
         }
         return highestEstimate;
     }
-    
-    public int alt(int startNodeNumber, int endNodeNumber) {
-        
+
+    /**
+     * Represents the ALT for finding the shortest drive time between two points.
+     *
+     * @param startNodeNumber the start node's number.
+     * @param endNodeNumber the end node's number.
+     * @return the shortest drive time between two points.
+     */
+    public int ALT(int startNodeNumber, int endNodeNumber) {
         Node startNode = nodes[startNodeNumber];
         Node endNode = nodes[endNodeNumber];
         startNode.travelTimeFromStartNode = 0;
         startNode.estimate = estimate(startNodeNumber, endNodeNumber);
-    
+
+        // PriorityQueue that priorities lowest travelTime + estimate
         PriorityQueue<Node> priorityQueue = new PriorityQueue<>(comparingInt((node) -> node.travelTimeFromStartNode + node.estimate));
         priorityQueue.add(startNode);
         
@@ -576,7 +565,6 @@ class AltAlgorithm extends DijkstrasAlgorithm {
                     priorityQueue.add(edge.toNode);
                 }
             }
-    
             if (currentNode.equals(endNode)) {
                 break;
             }
@@ -594,9 +582,14 @@ class AltAlgorithm extends DijkstrasAlgorithm {
         }
         return endNode.travelTimeFromStartNode;
     }
-    
+
+    /**
+     * Main method - entrypoint.
+     *
+     * @param args String[].
+     */
     public static void main(String[] args) {
-        /*
+
         PreprocessedDijkstra pd = new PreprocessedDijkstra();
         AltAlgorithm altAlgorithm = new AltAlgorithm();
         pd.readFromLandmarks("norden-preprossesert.txt", altAlgorithm.landmarkToNodes, altAlgorithm.nodesToLandmark);
@@ -607,29 +600,9 @@ class AltAlgorithm extends DijkstrasAlgorithm {
         String edgeFile = "norden.kanter.txt";
         altAlgorithm.readEdgeFile(edgeFile);
     
-        System.out.println(altAlgorithm.estimate(0, 2948202));
-        System.out.println(altAlgorithm.estimate(7080374, 2948202));
-        System.out.println(altAlgorithm.estimate(2000436, 2948202));
-        System.out.println(altAlgorithm.estimate(7826348, 2948202));
-         */
-        
-        
-        /*
-        
-         */
-        PreprocessedDijkstra pd = new PreprocessedDijkstra();
-        AltAlgorithm altAlgorithm = new AltAlgorithm();
-        pd.readFromLandmarks("norden-preprossesert.txt", altAlgorithm.landmarkToNodes, altAlgorithm.nodesToLandmark);
-    
-        String nodeFile = "norden.noder.txt";
-        altAlgorithm.readNodeFile(nodeFile);
-    
-        String edgeFile = "norden.kanter.txt";
-        altAlgorithm.readEdgeFile(edgeFile);
-    
-        int startNode = 2948202;
-        int endNode = 7826348;
-        int travelTime = altAlgorithm.alt(startNode, endNode) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
+        int startNode = 5009309;
+        int endNode = 999080;
+        int travelTime = altAlgorithm.ALT(startNode, endNode) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = altAlgorithm.getPath(endNode, altAlgorithm.nodes);
         if (!shortestPath.isEmpty()) {
             System.out.println("The shortest path contains this amount of nodes: " + shortestPath.size());
@@ -641,6 +614,11 @@ class AltAlgorithm extends DijkstrasAlgorithm {
         int travelTimeMinutes = (travelTime % 3600) / 60;
         int travelTimeSeconds = (travelTime - travelTimeHours * 3600 - travelTimeMinutes * 60);
         System.out.println("The shortest path takes this amount of time: " + travelTimeHours + " hour(s), " + travelTimeMinutes + " minute(s) and " + travelTimeSeconds + " second(s)\n");
-        
+
+        /*
+        for (int i = 0; i < shortestPath.size(); i+=38) {
+            System.out.println(shortestPath.get(i).latitude + "," + shortestPath.get(i).longitude);
+        }
+         */
     }
 }
