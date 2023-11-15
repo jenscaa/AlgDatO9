@@ -221,6 +221,7 @@ public class DijkstraAlgorithm {
 
 class AStar {
 
+    // Map that stores all the Nodes, the key is the nodeNumber.
     private Map<Integer, Node> nodes;
     // Map that stores a list of all the edges for each node, the key is the nodeNumber.
     private Map<Integer, ArrayList<Edge>> allEdges;
@@ -251,6 +252,19 @@ class AStar {
         return landmarks;
     }
 
+    int overTarget(){
+
+        return -1;
+
+
+    }
+
+    /**
+     * Find estimate from landmarks to nodes
+     * @param graph the nodes that works
+     * @param landmarks the landmarks that are used
+     */
+
     public void Distances (HashMap<Integer,Node> graph,ArrayList<Node> landmarks){
 
         Random random = new Random();
@@ -260,11 +274,41 @@ class AStar {
         for(Node landmark : landmarks){
             HashMap<Integer, Integer> distances = new HashMap<>(dijkstraAlgorithm.dijkstra(random.nextInt(graph.size()),landmark.nodeNumber));
         }
-
     }
 
+    /**
+     * The A*-algoritm that will be used.
+     * @param start the start-node
+     * @param stop the end-node
+     */
+    public void AStarAlg(Node start, Node stop){
 
-    public void AStarAlg(Node startNode, Node endnode){
+        /**
+         * landmarks to nodes
+         */
+
+        Map<Integer,Integer> distance = new HashMap<>();
+
+        PriorityQueue<Integer> open = new PriorityQueue<>(Comparator.comparingInt(distance::get));
+
+
+
+       DijkstraAlgorithm dijkstraAlgorithm = new DijkstraAlgorithm();
+
+        int optDist = dijkstraAlgorithm.dijkstra(start.nodeNumber,stop.nodeNumber);
+
+        Map<Integer, Node> openNodes = new HashMap<>();
+        Map<Integer, ArrayList<Edge>> openAllEdges = new HashMap<>();
+
+        openNodes.put(start.nodeNumber,start);
+        distance.put(start.nodeNumber,0);
+
+        while(!openNodes.isEmpty()){
+
+        }
+
+
+
 
     }
 
