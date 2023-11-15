@@ -362,8 +362,8 @@ class PreprocessedDijkstra extends DijkstrasAlgorithm {
             landmarkToNodes.put(landmark, landmarkToNodesDriveTime);
             
             dijkstra(landmark, invertedNodes);
-            int[] nodesToLandmarkDriveTime = new int[nodes.length];
-            for (Node n : nodes) {
+            int[] nodesToLandmarkDriveTime = new int[invertedNodes.length];
+            for (Node n : invertedNodes) {
                 nodesToLandmarkDriveTime[n.nodeNumber] = n.travelTimeFromStartNode;
             }
             nodesToLandmark.put(landmark, nodesToLandmarkDriveTime);
@@ -627,8 +627,8 @@ class AltAlgorithm extends DijkstrasAlgorithm {
         String edgeFile = "norden.kanter.txt";
         altAlgorithm.readEdgeFile(edgeFile);
     
-        int startNode = 7826348;
-        int endNode = 2948202;
+        int startNode = 2948202;
+        int endNode = 7826348;
         int travelTime = altAlgorithm.alt(startNode, endNode) / 100; // Divide by 100 to convert it to seconds (from centiseconds)
         List<Node> shortestPath = altAlgorithm.getPath(endNode, altAlgorithm.nodes);
         if (!shortestPath.isEmpty()) {
